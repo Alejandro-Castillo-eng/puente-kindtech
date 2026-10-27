@@ -1,0 +1,698 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prototipo Puente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<style>
+/* Layout: solo la app, estilo nativo (listas agrupadas, íconos en mosaicos de color, controles segmentados). Escritorio: teléfono centrado; móvil: pantalla completa. */
+:root {
+  --page: #DDE3E0;
+  --bg: #F3F5F4; --surface: #FFFFFF; --ink: #16201C; --muted: #6A7571; --faint: #9AA4A0; --line: #E3E8E5;
+  --accent: #1E7864; --accent-soft: #E2F1EC; --ai: #5555D0; --ai-soft: #EEEEFC;
+  --danger: #C23B3B; --danger-soft: #FCECEC; --warn-soft: #FFF5E5;
+  --t-blue: #3B7DDD; --t-green: #2E9E6B; --t-orange: #E58A2B; --t-purple: #7B5FD3; --t-pink: #D9558A; --t-teal: #1E9AA8; --t-red: #D9534F; --t-gray: #8A9490;
+  --e-high: #2E9E6B; --e-mid: #E0A228; --e-low: #8C72C9;
+  --bezel: #0E1110; --dim: rgba(16,22,20,.40); --on-accent: #FFFFFF; --switch-off: #D3DAD6; --shadow: 0 1px 2px rgba(16,24,20,.06), 0 4px 14px rgba(16,24,20,.05);
+  --f: "Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0C0F0E;
+  --bg: #0F1312; --surface: #1B211F; --ink: #EDF2EF; --muted: #A2ADA8; --faint: #6F7A76; --line: #2A322F;
+  --accent: #5CC4A8; --accent-soft: #1C302A; --ai: #A3A6FF; --ai-soft: #23244A;
+  --danger: #FF8A8A; --danger-soft: #3A2222; --warn-soft: #33291A;
+  --t-blue: #4D8EEB; --t-green: #3BB37D; --t-orange: #F0993C; --t-purple: #9177E6; --t-pink: #E9679B; --t-teal: #2DB0BF; --t-red: #E9625E; --t-gray: #6F7A76;
+  --e-high: #4CC48C; --e-mid: #F0B840; --e-low: #A58BE0;
+  --bezel: #000000; --dim: rgba(0,0,0,.6); --on-accent: #0D1F19; --switch-off: #3A4440; --shadow: none; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0C0F0E;
+  --bg: #0F1312; --surface: #1B211F; --ink: #EDF2EF; --muted: #A2ADA8; --faint: #6F7A76; --line: #2A322F;
+  --accent: #5CC4A8; --accent-soft: #1C302A; --ai: #A3A6FF; --ai-soft: #23244A;
+  --danger: #FF8A8A; --danger-soft: #3A2222; --warn-soft: #33291A;
+  --t-blue: #4D8EEB; --t-green: #3BB37D; --t-orange: #F0993C; --t-purple: #9177E6; --t-pink: #E9679B; --t-teal: #2DB0BF; --t-red: #E9625E; --t-gray: #6F7A76;
+  --e-high: #4CC48C; --e-mid: #F0B840; --e-low: #A58BE0;
+  --bezel: #000000; --dim: rgba(0,0,0,.6); --on-accent: #0D1F19; --switch-off: #3A4440; --shadow: none; color-scheme: dark }
+
+* { box-sizing: border-box }
+html { height: 100% }
+body { min-height: 100%; margin: 0; background: var(--page); color: var(--ink); font-family: var(--f); display: grid; place-items: center; padding-inline: 16px; padding-block: 16px; -webkit-font-smoothing: antialiased }
+button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+.lucide { width: 20px; height: 20px; stroke-width: 2; flex: none }
+
+.phone { width: 390px; max-width: 100%; height: min(820px, calc(100vh - 32px)); min-height: 560px; background: var(--bezel); border-radius: 50px; padding: 11px; box-shadow: 0 30px 70px rgba(0,0,0,.30) }
+.screen { position: relative; height: 100%; border-radius: 40px; overflow: hidden; background: var(--bg); font-size: 15px; line-height: 1.4; display: flex; flex-direction: column }
+.screen.bigtext { font-size: 17px }
+@media (max-width: 500px) {
+  body { padding: 0; display: block; height: 100% }
+  .phone { width: 100%; height: 100%; min-height: 0; border-radius: 0; padding: 0; box-shadow: none; background: var(--bg) }
+  .screen { border-radius: 0 } .status { display: none !important }
+}
+.status { height: 40px; flex: none; display: flex; justify-content: space-between; align-items: center; padding: 4px 30px 0; font-size: 14px; font-weight: 700 }
+.status .r { display: flex; gap: 5px; align-items: center } .status .lucide { width: 16px; height: 16px }
+.app { flex: 1; min-height: 0; display: flex; flex-direction: column }
+.scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 16px 24px; scrollbar-width: none }
+.scroll::-webkit-scrollbar { display: none }
+
+/* tipografía */
+.lt { font-size: 2.05em; font-weight: 800; letter-spacing: -.02em; margin: 0; line-height: 1.1 }
+.h2 { font-size: 1.5em; font-weight: 800; letter-spacing: -.015em; margin: 0 0 6px; line-height: 1.15; text-wrap: balance }
+.lead { color: var(--muted); margin: 0 0 20px; font-size: 1.02em }
+.muted { color: var(--muted) } .small { font-size: .87em }
+.label { font-size: .8em; font-weight: 700; color: var(--muted); margin: 22px 4px 8px; display: flex; justify-content: space-between; align-items: baseline }
+.label a, .label button { font-weight: 600; color: var(--accent); background: none; border: 0; padding: 0; font-size: 1em }
+
+/* encabezados */
+.top { display: flex; align-items: center; gap: 6px; padding: 2px 10px 6px; flex: none; min-height: 50px }
+.top .title { flex: 1; min-width: 0; text-align: center; font-weight: 700; font-size: 1.03em }
+.top .title small { display: flex; align-items: center; justify-content: center; gap: 5px; font-weight: 500; font-size: .78em; color: var(--muted) }
+.big { padding: 4px 12px 8px 20px; display: flex; align-items: center; gap: 6px; flex: none }
+.big > div { flex: 1; min-width: 0 }
+.ibtn { border: 0; background: transparent; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; flex: none; color: var(--ink) }
+.ibtn:hover { background: var(--line) }
+.ibtn.filled { background: var(--surface); box-shadow: var(--shadow) }
+.avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; flex: none; color: #fff; position: relative; font-size: 15px }
+.avatar.sm { width: 32px; height: 32px; font-size: 13px }
+.avatar .e { position: absolute; right: -1px; bottom: -1px; width: 13px; height: 13px; border-radius: 50%; border: 2.5px solid var(--surface) }
+
+/* superficies */
+.group { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow) }
+.cell { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: transparent; border: 0; text-align: left; position: relative; min-height: 54px }
+.cell + .cell::before { content: ""; position: absolute; top: 0; left: 56px; right: 0; height: 1px; background: var(--line) }
+.cell .t { flex: 1; min-width: 0 } .cell .t b { font-weight: 600; display: block } .cell .t small { display: block; color: var(--muted); font-size: .85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.cell .chev { color: var(--faint) }
+.cell.danger .t b { color: var(--danger) }
+.tile { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; color: #fff; flex: none }
+.tile .lucide { width: 18px; height: 18px }
+.tile.lg { width: 44px; height: 44px; border-radius: 13px } .tile.lg .lucide { width: 22px; height: 22px }
+.bl { background: var(--t-blue) } .gr { background: var(--t-green) } .or { background: var(--t-orange) } .pu { background: var(--t-purple) } .pk { background: var(--t-pink) } .te { background: var(--t-teal) } .rd { background: var(--t-red) } .gy { background: var(--t-gray) }
+.card { background: var(--surface); border-radius: 20px; padding: 16px; box-shadow: var(--shadow) }
+.stack { display: grid; gap: 10px }
+
+/* controles */
+.btn { width: 100%; border: 0; border-radius: 999px; height: 52px; font-weight: 700; font-size: 1em; background: var(--accent); color: var(--on-accent); display: inline-flex; align-items: center; justify-content: center; gap: 8px }
+.btn.tonal { background: var(--accent-soft); color: var(--accent) }
+.btn.text { background: transparent; color: var(--accent); height: 44px }
+.btn.sm { width: auto; height: 36px; padding: 0 16px; font-size: .9em }
+.btn:disabled { opacity: .55; cursor: default }
+.sw { flex: none; width: 51px; height: 31px; border-radius: 16px; border: 0; background: var(--switch-off); position: relative; transition: background .2s }
+.sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.2); transition: left .2s }
+.sw[aria-checked="true"] { background: var(--accent) } .sw[aria-checked="true"]::after { left: 22px }
+.chips { display: flex; flex-wrap: wrap; gap: 8px }
+.chip { border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; font-size: .93em; font-weight: 500; display: inline-flex; align-items: center; gap: 6px }
+.chip .lucide { width: 16px; height: 16px }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg) }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--line); border-radius: 12px; padding: 3px; gap: 2px }
+.seg button { border: 0; background: transparent; border-radius: 10px; padding: 8px 4px; font-size: .86em; font-weight: 600; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap }
+.seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.12) }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.choice { background: var(--surface); border: 2px solid transparent; border-radius: 18px; padding: 14px; text-align: left; display: grid; gap: 10px; box-shadow: var(--shadow); font-weight: 600 }
+.choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft) }
+.radio { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--faint); flex: none; display: grid; place-items: center }
+.radio.on { border-color: var(--accent); background: var(--accent); color: #fff } .radio .lucide { width: 14px; height: 14px; stroke-width: 3 }
+.input { width: 100%; border: 0; border-radius: 12px; padding: 12px 14px; font: inherit; background: var(--line); color: var(--ink) }
+.dots { display: inline-flex; gap: 3px; align-items: center } .dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--line) } .dots i.on { background: var(--ai) }
+.edot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none }
+.e-high { background: var(--e-high) } .e-mid { background: var(--e-mid) } .e-low { background: var(--e-low) }
+.ai-badge { display: inline-flex; align-items: center; gap: 5px; font-size: .78em; font-weight: 700; color: var(--ai); background: var(--ai-soft); border-radius: 999px; padding: 4px 10px }
+.ai-badge .lucide { width: 14px; height: 14px }
+.note { display: flex; gap: 8px; align-items: center; font-size: .84em; color: var(--muted); padding: 2px 4px }
+.note .lucide { width: 16px; height: 16px }
+
+/* onboarding */
+.hero { display: grid; place-items: center; padding: 18px 0 8px }
+.feature { display: flex; gap: 14px; align-items: center; padding: 10px 0 }
+.feature .t b { display: block; font-weight: 700 } .feature .t small { color: var(--muted); font-size: .88em }
+.pager { display: flex; gap: 6px; justify-content: center; padding: 6px 0 2px } .pager i { width: 7px; height: 7px; border-radius: 4px; background: var(--line); transition: width .2s } .pager i.on { width: 20px; background: var(--accent) }
+.footer { flex: none; padding: 10px 16px 18px; display: grid; gap: 4px; background: var(--bg) }
+
+/* inicio */
+.hscroll { display: flex; gap: 10px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 6px; scrollbar-width: none } .hscroll::-webkit-scrollbar { display: none }
+.space { flex: none; width: 150px; background: var(--surface); border: 0; border-radius: 20px; padding: 14px; text-align: left; display: grid; gap: 10px; box-shadow: var(--shadow); position: relative }
+.space b { font-weight: 700; font-size: .95em; line-height: 1.25 } .space small { color: var(--muted); font-size: .82em }
+.badge { position: absolute; top: 12px; right: 12px; min-width: 20px; height: 20px; border-radius: 10px; background: var(--danger); color: #fff; font-size: 12px; font-weight: 700; display: grid; place-items: center; padding: 0 6px }
+.datebox { width: 52px; border-radius: 12px; overflow: hidden; text-align: center; flex: none; background: var(--surface); border: 1px solid var(--line) }
+.datebox span { display: block; background: var(--t-red); color: #fff; font-size: 11px; font-weight: 700; padding: 2px 0; letter-spacing: .04em }
+.datebox b { display: block; font-size: 20px; padding: 3px 0 4px }
+.person { display: flex; align-items: center; gap: 12px }
+.person .t { flex: 1; min-width: 0 } .person .t b { display: block } .person .t small { color: var(--muted); font-size: .85em }
+
+/* pestañas */
+.tabbar { flex: none; display: grid; grid-template-columns: repeat(5, 1fr); background: var(--surface); padding: 8px 4px 18px; box-shadow: 0 -1px 0 var(--line) }
+.tabbar button { border: 0; background: transparent; display: grid; justify-items: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--faint) }
+.tabbar .pillwrap { width: 56px; height: 30px; border-radius: 15px; display: grid; place-items: center; transition: background .2s }
+.tabbar button[aria-current="page"] { color: var(--ink) }
+.tabbar button[aria-current="page"] .pillwrap { background: var(--accent-soft); color: var(--accent) }
+
+/* chat */
+.chat { display: flex; flex-direction: column; gap: 6px; padding: 8px 14px 14px }
+.day { align-self: center; font-size: 12px; font-weight: 600; color: var(--faint); padding: 8px 0 4px }
+.msg { max-width: 78%; padding: 9px 14px; border-radius: 20px; line-height: 1.35 }
+.msg.them { align-self: flex-start; background: var(--surface); border-bottom-left-radius: 6px; box-shadow: var(--shadow) }
+.msg.me { align-self: flex-end; background: var(--accent); color: var(--on-accent); border-bottom-right-radius: 6px }
+.msg .who { display: block; font-size: 12px; font-weight: 700; color: var(--t-purple); margin-bottom: 1px }
+.sys { align-self: center; font-size: 12px; color: var(--faint); padding: 4px 0; display: flex; gap: 5px; align-items: center } .sys .lucide { width: 14px; height: 14px }
+.intro { align-self: stretch; text-align: center; padding: 12px 8px 4px; display: grid; justify-items: center; gap: 6px }
+.intro .avatar { width: 64px; height: 64px; font-size: 24px }
+.intro .chips { justify-content: center } .intro .chip { padding: 4px 10px; font-size: .8em; border-width: 1px }
+.askmean { align-self: flex-start; border: 0; color: var(--ai); background: var(--ai-soft); border-radius: 999px; padding: 5px 11px 5px 9px; font-size: .82em; font-weight: 600; display: inline-flex; gap: 5px; align-items: center; margin: 2px 0 4px }
+.askmean .lucide { width: 14px; height: 14px }
+.stylechip { align-self: center; border: 0; background: var(--surface); box-shadow: var(--shadow); border-radius: 999px; padding: 6px 12px; font-size: .82em; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; color: var(--muted) }
+.stylechip .lucide { width: 15px; height: 15px }
+.stylebox { align-self: stretch; background: var(--surface); border-radius: 16px; padding: 12px 14px; font-size: .9em; box-shadow: var(--shadow) }
+.stylebox ul { margin: 0; padding-left: 18px; display: grid; gap: 3px }
+.quick { flex: none; display: flex; gap: 8px; overflow-x: auto; padding: 6px 12px 8px; scrollbar-width: none } .quick::-webkit-scrollbar { display: none }
+.quick button { flex: none; border: 0; border-radius: 999px; padding: 8px 13px; font-size: .86em; font-weight: 600; display: inline-flex; gap: 6px; align-items: center; background: var(--surface); box-shadow: var(--shadow) }
+.quick button.ai { background: var(--ai-soft); color: var(--ai); box-shadow: none }
+.quick .lucide { width: 16px; height: 16px }
+.composer { flex: none; display: flex; gap: 8px; align-items: flex-end; padding: 6px 12px 16px; background: var(--bg) }
+.field-wrap { flex: 1; background: var(--surface); border-radius: 22px; display: flex; align-items: flex-end; box-shadow: var(--shadow); border: 1.5px solid transparent }
+.field-wrap.filled { border-color: var(--ai) }
+.field-wrap textarea { flex: 1; resize: none; border: 0; background: transparent; padding: 11px 4px 11px 16px; font: inherit; color: var(--ink); height: 44px; outline: none }
+.field-wrap.filled textarea { height: 84px }
+.field-wrap .tone { border: 0; background: transparent; color: var(--ai); width: 40px; height: 44px; display: grid; place-items: center }
+.send { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none }
+.hint { font-size: 12px; color: var(--ai); padding: 0 20px 2px; display: flex; gap: 5px; align-items: center } .hint .lucide { width: 13px; height: 13px }
+.banner { align-self: stretch; background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); display: grid; gap: 10px; margin-top: 4px }
+
+/* hoja inferior */
+.dim { position: absolute; inset: 0; background: var(--dim); display: flex; align-items: flex-end; z-index: 5; animation: fade .2s }
+.sheet { width: 100%; max-height: 86%; overflow-y: auto; background: var(--bg); border-radius: 28px 28px 0 0; padding: 8px 16px 22px; animation: up .25s ease-out; scrollbar-width: none }
+@keyframes up { from { transform: translateY(40px); opacity: .6 } } @keyframes fade { from { opacity: 0 } }
+.grab { width: 36px; height: 5px; border-radius: 3px; background: var(--faint); opacity: .5; margin: 0 auto 12px }
+.sheet-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px }
+.sheet-h b { flex: 1; font-size: 1.15em; font-weight: 800 }
+.sug { background: var(--surface); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); display: grid; gap: 8px }
+.sug .k { font-size: .76em; font-weight: 700; color: var(--ai); letter-spacing: .02em; text-transform: uppercase }
+.sug .idea { font-size: 1.02em; font-weight: 500; line-height: 1.35 }
+.sug .foot { display: flex; align-items: center; gap: 10px }
+.sug .foot .grow { flex: 1; display: flex; gap: 10px; align-items: center; font-size: .8em; color: var(--muted) }
+.sug .why { font-size: .86em; color: var(--muted); background: var(--bg); border-radius: 10px; padding: 8px 10px }
+.linkish { border: 0; background: none; padding: 0; color: var(--muted); font-size: 1em; font-weight: 600; display: inline-flex; gap: 4px; align-items: center } .linkish .lucide { width: 14px; height: 14px }
+.direct { background: var(--accent-soft); border-radius: 18px; padding: 14px; display: grid; gap: 8px }
+.direct b { color: var(--accent) }
+
+/* evento */
+.ev-hero { display: flex; gap: 14px; align-items: center; padding: 6px 4px 16px }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px }
+.fact { background: var(--surface); border-radius: 18px; padding: 14px; display: grid; gap: 8px; box-shadow: var(--shadow) }
+.fact b { font-weight: 700; font-size: .95em } .fact small { color: var(--muted); font-size: .8em; display: block }
+.tl { list-style: none; margin: 0; padding: 4px 14px; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow) }
+.tl li { display: grid; grid-template-columns: 46px 14px 1fr; gap: 10px; align-items: start; padding: 10px 0; font-size: .93em }
+.tl .h { font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted) }
+.tl .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); margin-top: 5px }
+
+.toast { position: absolute; left: 16px; right: 16px; bottom: 90px; background: var(--ink); color: var(--bg); border-radius: 16px; padding: 13px 16px; font-size: .92em; font-weight: 500; z-index: 9; display: flex; gap: 10px; align-items: center; animation: up .2s ease-out }
+.toast .lucide { width: 18px; height: 18px }
+.mood { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px }
+.mood button { border: 0; border-radius: 14px; height: 44px; font-weight: 700; background: var(--bg) }
+.mood button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent) }
+
+.screen.lowstim { filter: saturate(.25) }
+.screen.lowstim *, .screen.lowstim { animation: none !important; transition: none !important }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important } }
+</style>
+
+<div class="phone"><div class="screen" id="screen">
+  <div class="status"><span>9:41</span><span class="r"><i data-lucide="signal"></i><i data-lucide="wifi"></i><i data-lucide="battery-full"></i></span></div>
+  <div class="app" id="app"></div>
+</div></div>
+
+<script>
+const ic = (n) => `<i data-lucide="${n}"></i>`;
+
+/* ---------- contenido (Ficha 1) ---------- */
+const OCC = [['uni', 'Universidad', 'graduation-cap', 'bl'], ['inst', 'Instituto', 'book-open', 'te'], ['job', 'Primer empleo', 'briefcase', 'or'], ['other', 'Otra', 'ellipsis', 'gy']];
+const HARD = ['Empezar a hablar', 'Qué decir después', 'Bromas e indirectas', 'Mostrar interés', 'Cuándo volver a escribir', 'Chats de grupo', 'Pasar a ser amigos', 'Encontrar con quién'];
+const INTERESTS = [['Ajedrez', 'crown'], ['Programación', 'code'], ['Videojuegos', 'gamepad-2'], ['Anime', 'sparkle'], ['Música', 'music'], ['Dibujo', 'palette'], ['Trenes', 'train-front'], ['Idiomas', 'languages'], ['Ciencia', 'flask-conical'], ['Series', 'tv']];
+const SUPPORT = [['min', 'Poca', 'Solo cuando la pido', 'hand'], ['mid', 'Media', 'Me avisa si hay dudas', 'lightbulb'], ['max', 'Guiada', 'Paso a paso, texto grande', 'list-checks']];
+const ENERGY = { high: ['Con ganas', 'Con ganas de conversar', 'e-high'], mid: ['Con calma', 'Responde con calma', 'e-mid'], low: ['Pausa', 'Necesita una pausa', 'e-low'] };
+const COLORS = { D: 'var(--t-blue)', V: 'var(--t-pink)', G: 'var(--t-purple)', S: 'var(--t-orange)', A: 'var(--t-teal)' };
+
+const CHATS = {
+  diego: {
+    name: 'Diego', av: 'D', energy: 'high', space: 'Ajedrez',
+    style: ['Prefiere mensajes directos', 'Responde con calma', 'Le encanta hablar de aperturas'],
+    quick: [['sparkles', 'Ideas', 'Ideas'], ['circle-help', '¿Qué quiso decir?', 'Significado'], ['clock', '¿Cuándo escribo?', 'Tiempos'], ['hand', 'Despedirme', 'Despedirse']],
+    msgs: [{ day: 'Lunes' }, { them: '¿Jugaste la partida del torneo de ayer?' }, { me: 'Sí. Perdí en 30 jugadas. Usé la siciliana.' },
+      { them: 'Jaja, clásico. La siciliana no perdona 😅', amb: 'Significado' }, { sys: 'Hace 2 horas · sin apuro' }],
+    reply: [{ day: 'Miércoles' }, { them: 'A mí también me pasó mil veces. El jueves hay club de ajedrez en el pabellón B, ¿vas?' }],
+    nextStep: true,
+    tabs: {
+      'Ideas': { title: 'Ideas para seguir', sugs: [
+        { k: 'Pregunta', idea: '¿Tú qué apertura usas cuando juegas con negras?', why: 'Diego habla de aperturas. Una pregunta abierta le deja contar algo suyo.', c: 3 },
+        { k: 'Comparte algo tuyo', idea: 'Creo que fallé en la jugada 12. ¿Te paso la partida?', why: 'Un detalle propio mantiene el tema que les gusta a los dos.', c: 2 },
+        { k: 'Muestra interés', idea: '¿Vas a jugar el próximo torneo?', why: 'Preguntar por sus planes muestra interés sin presionar.', c: 2 }] },
+      'Significado': { title: '¿Qué quiso decir?', about: 'Jaja, clásico. La siciliana no perdona 😅', reads: [
+        { k: 'Lo más probable', idea: 'Es una broma amistosa sobre la apertura, no sobre ti.', c: 2, why: '«Jaja» y 😅 suelen marcar tono de broma. «Clásico» aquí significa «pasa mucho».' },
+        { k: 'También puede ser', idea: 'Él también perdió con la siciliana y se siente identificado.', c: 1 }],
+        direct: '¿Lo dices porque a ti también te pasó?' },
+      'Tiempos': { title: '¿Cuándo vuelvo a escribir?', timing: [['clock', '2 horas es normal', 'Diego responde con calma.'], ['calendar-days', 'Después de 2–3 días', 'Puedes escribirle de nuevo.'], ['heart', 'No es personal', 'Tardar no significa que esté molesto.']] },
+      'Despedirse': { title: 'Cerrar la charla', sugs: [{ k: 'Despedida amable', idea: 'Me tengo que ir a clase. ¡Seguimos luego!', why: 'Avisar que te vas evita que piense que lo ignoras.', c: 3 }] },
+    },
+  },
+  valeria: {
+    name: 'Valeria', av: 'V', energy: 'mid', space: 'Programación de juegos', fresh: true,
+    style: ['Le cuesta empezar: prefiere que le escriban primero', 'Le gustan los juegos de plataformas'],
+    quick: [['sparkles', 'Ideas para saludar', 'Saludar'], ['clock', '¿Y si no responde?', 'Tiempos']],
+    shared: ['Programación', 'Videojuegos'],
+    msgs: [], reply: [{ them: '¡Hola! Estoy haciendo un juego de plataformas en Godot. ¿Tú qué programas?' }],
+    tabs: {
+      'Saludar': { title: 'Ideas para saludar', sugs: [
+        { k: 'Algo en común', idea: 'Hola, Valeria. Vi que programas videojuegos. ¿Estás haciendo alguno?', why: 'Empezar por un interés común es más fácil que un tema general.', c: 3 },
+        { k: 'Preséntate', idea: 'Hola, soy Ale. Estoy aprendiendo Unity. ¡Bienvenida al espacio!', why: 'Contar algo breve de ti le da algo a qué responder.', c: 3 }] },
+      'Tiempos': { title: '¿Y si no responde?', timing: [['battery-medium', 'Hoy responde con calma', 'Puede tardar un día o más.'], ['heart', 'No es personal', 'Mucha gente tarda en un espacio nuevo.'], ['message-circle', 'Puedes escribir una vez más', 'O seguir participando en el espacio.']] },
+    },
+  },
+  grupo: {
+    name: 'Taller de Programación II', short: 'Taller Prog. II', av: 'G', space: 'Grupo de trabajo · 4', group: true,
+    quick: [['list', 'Resumen', 'Resumen'], ['sparkles', 'Cómo participar', 'Participar']],
+    msgs: [{ day: 'Hoy' }, { them: 'Repartámonos el proyecto. Yo veo el diseño de pantallas.', who: 'Carla' },
+      { them: 'Yo hago el login 👍', who: 'Bruno' }, { them: 'Falta alguien para la base de datos, ¿no? Entregamos el viernes.', who: 'Carla', amb: 'Resumen' }],
+    reply: [{ them: 'Genial, gracias Ale 🙌 Te anoto en base de datos.', who: 'Carla' }],
+    tabs: {
+      'Resumen': { title: 'Resumen del grupo', summary: [['pen-line', 'Carla', 'Diseño de pantallas'], ['lock', 'Bruno', 'Login'], ['database', 'Nadie aún', 'Base de datos'], ['calendar-days', 'Entrega', 'Viernes']],
+        hint: 'Nadie se ofreció para la base de datos. Puedes hacerlo tú.' },
+      'Participar': { title: 'Cómo participar', sugs: [
+        { k: 'Ofrécete', idea: 'Yo hago la base de datos. ¿Para qué día la necesitan?', why: 'Carla pidió a alguien. Ofrecerte con una pregunta concreta deja claro qué harás.', c: 3 },
+        { k: 'Pide que aclaren', idea: '¿La base de datos incluye las pruebas o solo las tablas?', why: 'Si la tarea no está clara, preguntarlo evita malentendidos.', c: 2 }] },
+    },
+  },
+  sofia: {
+    name: 'Sofía', av: 'S', energy: 'high', space: 'Música para estudiar',
+    style: ['Le gusta compartir playlists', 'Prefiere texto a audios largos'],
+    quick: [['sparkles', 'Ideas para retomar', 'Retomar'], ['clock', '¿Es raro escribir?', 'Tiempos']],
+    msgs: [{ day: 'Hace 6 días' }, { them: 'Te paso mi playlist para estudiar 🎮 pura música de videojuegos' }, { me: '¡Gracias! La escucho mañana.' }],
+    reply: [{ them: '¡Qué bueno que te gustó! Esta semana agrego más de Zelda.' }],
+    tabs: {
+      'Retomar': { title: 'Ideas para retomar', sugs: [
+        { k: 'Lo que quedó pendiente', idea: 'Al final escuché tu playlist. La de Zelda me ayudó a concentrarme.', why: 'Dijiste que la escucharías. Contarle qué te pareció retoma la charla.', c: 3 },
+        { k: 'Sin justificarte', idea: 'Hola, Sofía. ¿Cómo vas con los exámenes?', why: 'No hace falta disculparse por no escribir. Basta con retomar.', c: 2 }] },
+      'Tiempos': { title: '¿Es raro escribir ahora?', timing: [['check', 'No es raro', 'Seis días entre mensajes es normal.'], ['battery-full', 'Sofía tiene ganas de conversar', 'Lo marcó hoy.']] },
+    },
+  },
+};
+
+const SPACES = [
+  { id: 'diego', ic: 'crown', c: 'bl', t: 'Ajedrez', d: '7 personas', tags: ['Pequeño', 'Calmado', 'Presencial'], mine: true, badge: 1 },
+  { id: 'grupo', ic: 'code', c: 'pu', t: 'Taller Prog. II', d: 'Grupo del curso', tags: ['Pequeño', 'Virtual'], mine: true, badge: 3 },
+  { id: 'valeria', ic: 'gamepad-2', c: 'pk', t: 'Programación de juegos', d: '9 personas', tags: ['Pequeño', 'Virtual'], mine: true },
+  { id: 'sofia', ic: 'music', c: 'or', t: 'Música para estudiar', d: '12 personas', tags: ['Calmado', 'Virtual'], mine: true },
+  { ic: 'palette', c: 'te', t: 'Dibujo digital', d: '6 personas · sin presión por hablar', tags: ['Pequeño', 'Calmado', 'Virtual'] },
+  { ic: 'train-front', c: 'gr', t: 'Trenes de Lima', d: '5 personas · salidas al Metro', tags: ['Pequeño', 'Presencial'] },
+  { ic: 'languages', c: 'rd', t: 'Japonés por texto', d: '8 personas', tags: ['Calmado', 'Virtual'] },
+];
+const FILTERS = ['Pequeño', 'Calmado', 'Presencial', 'Virtual'];
+const STEPS = [
+  ['map-pin', 'Ir juntos al club', 'Jueves 5 p. m. · Pabellón B', '¡Sí! Voy el jueves. ¿Nos vemos en la entrada de la sala 204?'],
+  ['book-open', 'Revisar la partida', 'Biblioteca · 30 min', '¿Revisamos mi partida en la biblioteca esta semana?'],
+  ['message-circle', 'Seguir por chat', 'Sin prisa, también está bien', ''],
+];
+const PHRASES = {
+  'Presentarme': ['Hola, soy Ale. Estudio Computación y me gusta el ajedrez.', 'Soy nuevo en el grupo. Me cuesta empezar, pero me gusta leerlos.'],
+  'Seguir': ['¿Y a ti qué te gusta de eso?', 'Eso me interesa. ¿Me cuentas más?'],
+  'Aclarar': ['No sé si entendí. ¿Me lo explicas de otra forma?', '¿Lo dices en broma o en serio? A veces me cuesta notarlo.'],
+  'Pausa': ['Necesito una pausa, pero me gusta hablar contigo. Te escribo luego.', 'Hoy tengo poca energía. ¿Seguimos mañana?'],
+  'Despedirme': ['Me tengo que ir. ¡Seguimos luego!', 'Gracias por la charla, me gustó.'],
+  'Decir que no': ['Gracias por invitarme, pero esta vez no puedo.', 'Prefiero no hablar de ese tema. ¿Hablamos de otra cosa?'],
+};
+
+/* ---------- estado ---------- */
+const initial = () => ({
+  route: 'welcome', stack: [], obStep: 0, aiOn: true, ethics: false, lowstim: false, bigtext: false, fade: true, followups: true,
+  occ: 'uni', support: 'mid', hard: new Set(['Qué decir después', 'Bromas e indirectas', 'Encontrar con quién']),
+  interests: new Set(['Ajedrez', 'Programación', 'Videojuegos', 'Música']), direct: true, calm: true, energy: 'high',
+  chat: null, sheet: null, tab: null, why: {}, draft: {}, sent: { diego: [], valeria: [], grupo: [], sofia: [] }, replied: {},
+  step: null, helped: false, mood: null, toast: null, filters: new Set(), joined: new Set(), going: false, showStyle: false,
+  myPhrases: [], pcat: 'Presentarme', trust: false, showAlert: false,
+});
+let S = initial();
+
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const sw = (id, on, label) => `<button class="sw" role="switch" aria-checked="${on}" aria-label="${label}" data-act="tog:${id}"></button>`;
+const dots = (n) => `<span class="dots" title="Certeza ${['', 'baja', 'media', 'alta'][n]}">${[1, 2, 3].map(k => `<i class="${k <= n ? 'on' : ''}"></i>`).join('')}</span>`;
+const avatar = (l, e, cls = '') => `<span class="avatar ${cls}" style="background:${COLORS[l] || 'var(--t-gray)'}">${l}${e ? `<span class="e ${ENERGY[e][2]}"></span>` : ''}</span>`;
+const helpBtn = `<button class="ibtn" data-act="nav:help" aria-label="Ayuda y seguridad">${ic('shield')}</button>`;
+const topBar = (title, sub = '', { help = true, right = '' } = {}) => `<div class="top"><button class="ibtn" data-act="back" aria-label="Volver">${ic('chevron-left')}</button>
+  <div class="title">${title}${sub ? `<small>${sub}</small>` : ''}</div>${right || (help ? helpBtn : '<span style="width:42px"></span>')}</div>`;
+const big = (title, sub = '') => `<div class="big"><div><h1 class="lt">${title}</h1>${sub ? `<div class="muted small" style="margin-top:4px">${sub}</div>` : ''}</div>${helpBtn}</div>`;
+const cell = (act, tile, color, title, sub = '', right = ic('chevron-right'), cls = '') => `<button class="cell ${cls}" ${act ? `data-act="${act}"` : ''}>${tile ? `<span class="tile ${color}">${ic(tile)}</span>` : ''}<span class="t"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span>${right ? `<span class="chev">${right}</span>` : ''}</button>`;
+const swCell = (id, tile, color, title, sub = '') => `<div class="cell"><span class="tile ${color}">${ic(tile)}</span><span class="t"><b>${title}</b>${sub ? `<small>${sub}</small>` : ''}</span>${sw(id, S[id], title)}</div>`;
+const tabbar = (cur) => `<nav class="tabbar">${[['home', 'Inicio', 'house'], ['explore', 'Explorar', 'compass'], ['chats', 'Chats', 'message-circle'], ['phrases', 'Frases', 'bookmark'], ['profile', 'Perfil', 'user-round']]
+  .map(([k, l, i]) => `<button data-act="tab:${k}" ${cur === k ? 'aria-current="page"' : ''}><span class="pillwrap">${ic(i)}</span>${l}</button>`).join('')}</nav>`;
+
+/* ---------- onboarding ---------- */
+const HERO = `<svg width="200" height="150" viewBox="0 0 200 150" aria-hidden="true">
+  <path d="M30 108 Q100 30 170 108" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M30 108 H170" stroke="var(--line)" stroke-width="6" stroke-linecap="round"/>
+  ${[55, 78, 100, 122, 145].map(x => `<line x1="${x}" y1="108" x2="${x}" y2="${108 - (78 - Math.abs(100 - x) * 0.9) * 0.75}" stroke="var(--accent)" stroke-width="3" opacity=".45"/>`).join('')}
+  <rect x="6" y="40" width="58" height="40" rx="16" fill="var(--t-blue)"/><path d="M22 80 l-6 12 l16 -12z" fill="var(--t-blue)"/>
+  <circle cx="24" cy="60" r="4" fill="#fff"/><circle cx="36" cy="60" r="4" fill="#fff"/><circle cx="48" cy="60" r="4" fill="#fff"/>
+  <rect x="136" y="30" width="58" height="40" rx="16" fill="var(--t-pink)"/><path d="M178 70 l6 12 l-16 -12z" fill="var(--t-pink)"/>
+  <path d="M152 50 h26 M152 58 h16" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="100" cy="22" r="13" fill="var(--ai-soft)"/><path d="M100 14 l2.4 5.6 5.6 2.4 -5.6 2.4 -2.4 5.6 -2.4 -5.6 -5.6 -2.4 5.6 -2.4z" fill="var(--ai)"/>
+</svg>`;
+const pager = (n) => `<div class="pager">${[0, 1, 2, 3, 4].map(k => `<i class="${k === n ? 'on' : ''}"></i>`).join('')}</div>`;
+function vWelcome() {
+  return `<div class="scroll" style="display:flex;flex-direction:column;justify-content:center">
+    <div class="hero">${HERO}</div>
+    <h1 class="lt" style="text-align:center;margin-top:10px">Puente</h1>
+    <p class="lead" style="text-align:center;margin-top:8px">Conecta con personas que comparten tus intereses. A tu ritmo.</p>
+  </div>
+  <div class="footer">${pager(0)}<button class="btn" data-act="ob:ai">Empezar</button><button class="btn text" data-act="toast:Inicio de sesión con tu correo institucional.">Ya tengo cuenta</button></div>`;
+}
+function vObAI() {
+  return `<div class="scroll"><div style="height:28px"></div>
+    <span class="tile lg pu" style="margin-bottom:14px">${ic('sparkles')}</span>
+    <h2 class="h2">Una IA que te acompaña, no que habla por ti</h2>
+    <div style="margin:14px 0 18px">
+      <div class="feature"><span class="tile bl">${ic('message-circle')}</span><span class="t"><b>Ideas para empezar o seguir</b><small>Cuando no sabes qué decir</small></span></div>
+      <div class="feature"><span class="tile or">${ic('circle-help')}</span><span class="t"><b>Te explica mensajes confusos</b><small>Bromas, indirectas, tonos</small></span></div>
+      <div class="feature"><span class="tile gr">${ic('pen-line')}</span><span class="t"><b>Nunca escribe ni envía por ti</b><small>Tú decides cada palabra</small></span></div>
+    </div>
+    <div class="group">${swCell('aiOn', 'sparkles', 'pu', 'Sugerencias de IA', 'Puedes apagarlas siempre')}${swCell('ethics', 'shield', 'gy', 'Ayudar a revisar sesgos', 'Anónimo · opcional')}</div>
+    <p class="note" style="margin-top:12px">${ic('lock')} Sin DNI, diagnóstico, ubicación ni contactos.</p>
+  </div><div class="footer">${pager(1)}<button class="btn" data-act="ob:about">Continuar</button></div>`;
+}
+function vObAbout() {
+  return `<div class="scroll"><div style="height:20px"></div>
+    <h2 class="h2">¿En qué estás ahora?</h2>
+    <div class="grid2" style="margin:14px 0 4px">${OCC.map(([k, t, i, c]) => `<button class="choice" data-act="occ:${k}" aria-pressed="${S.occ === k}"><span class="tile ${c}">${ic(i)}</span>${t}</button>`).join('')}</div>
+    <div class="label">¿Qué te cuesta más? <span style="font-weight:500">Opcional</span></div>
+    <div class="chips">${HARD.map(h => `<button class="chip" data-act="hard:${h}" aria-pressed="${S.hard.has(h)}">${h}</button>`).join('')}</div>
+    <p class="note" style="margin-top:14px">${ic('eye-off')} Solo ajusta tus sugerencias. Nadie más lo ve.</p>
+  </div><div class="footer">${pager(2)}<button class="btn" data-act="ob:support">Continuar</button></div>`;
+}
+function vObSupport() {
+  return `<div class="scroll"><div style="height:20px"></div>
+    <h2 class="h2">¿Cuánta ayuda quieres?</h2>
+    <p class="lead small">Puedes cambiarlo cuando quieras.</p>
+    <div class="group">${SUPPORT.map(([k, t, d, i]) => `<button class="cell" data-act="support:${k}"><span class="tile ${k === 'min' ? 'gy' : k === 'mid' ? 'te' : 'gr'}">${ic(i)}</span><span class="t"><b>${t}</b><small>${d}</small></span><span class="radio ${S.support === k ? 'on' : ''}">${S.support === k ? ic('check') : ''}</span></button>`).join('')}</div>
+    <div class="label">Comodidad</div>
+    <div class="group">${swCell('bigtext', 'type', 'bl', 'Texto grande')}${swCell('lowstim', 'sun', 'or', 'Baja estimulación', 'Colores suaves, sin animaciones')}
+      ${cell('trust', 'heart', 'pk', 'Persona de confianza', S.trust ? 'Mamá · solo recibe avisos' : 'Opcional', S.trust ? ic('check') : ic('plus'))}</div>
+  </div><div class="footer">${pager(3)}<button class="btn" data-act="ob:interests">Continuar</button></div>`;
+}
+function vObInterests() {
+  return `<div class="scroll"><div style="height:20px"></div>
+    <h2 class="h2">¿Qué te gusta?</h2>
+    <p class="lead small">Te mostraremos espacios pequeños sobre esto.</p>
+    <div class="chips">${INTERESTS.map(([x, i]) => `<button class="chip" data-act="int:${x}" aria-pressed="${S.interests.has(x)}">${ic(i)}${x}</button>`).join('')}</div>
+    <div class="label">Cómo prefieres que te escriban</div>
+    <div class="group">${swCell('direct', 'message-square', 'bl', 'Mensajes directos', 'Sin indirectas')}${swCell('calm', 'clock', 'te', 'Respondo con calma', 'Puedo tardar un día')}</div>
+    <p class="note" style="margin-top:12px">${ic('id-card')} Esto aparece en tu tarjeta de estilo.</p>
+  </div><div class="footer">${pager(4)}<button class="btn" data-act="start">Listo</button></div>`;
+}
+
+/* ---------- pestañas ---------- */
+const energySeg = () => `<div class="seg" role="group" aria-label="Energía social">${Object.entries(ENERGY).map(([k, [s]]) => `<button data-act="energy:${k}" aria-pressed="${S.energy === k}"><span class="edot ${ENERGY[k][2]}"></span>${s}</button>`).join('')}</div>`;
+function vHome() {
+  const mine = SPACES.filter(s => s.mine || S.joined.has(s.t));
+  return `${big('Hola, Ale')}
+  <div class="scroll">
+    <div class="label" style="margin-top:6px">Tu energía hoy <span style="font-weight:500">Los demás la ven</span></div>
+    ${energySeg()}
+    <div class="label">Personas nuevas</div>
+    <div class="card person">${avatar('V', 'mid')}<span class="t"><b>Valeria</b><small>Programación · Videojuegos</small></span><button class="btn sm tonal" data-act="open:valeria">Saludar</button></div>
+    ${S.followups && !S.sent.sofia.length ? `<div class="label">Para retomar</div>
+      <div class="group">${`<button class="cell" data-act="open:sofia">${avatar('S', 'high', 'sm')}<span class="t"><b>Sofía</b><small>Te pasó una playlist hace 6 días</small></span><span class="chev">${ic('chevron-right')}</span></button>`}</div>` : ''}
+    <div class="label">Tus espacios <button data-act="tab:explore">Ver más</button></div>
+    <div class="hscroll">${mine.map(s => `<button class="space" ${s.id ? `data-act="open:${s.id}"` : ''}><span class="tile lg ${s.c}">${ic(s.ic)}</span><span><b>${s.t}</b><br><small>${s.d}</small></span>${s.badge && !(s.id && S.sent[s.id].length) ? `<span class="badge">${s.badge}</span>` : ''}</button>`).join('')}</div>
+    <div class="label">Esta semana</div>
+    <button class="card person" style="border:0;width:100%;text-align:left" data-act="nav:event"><span class="datebox"><span>JUE</span><b>29</b></span><span class="t"><b>Club de ajedrez</b><small>5 p. m. · Ruido bajo · 6–10 personas</small></span>${S.going ? `<span class="ai-badge" style="color:var(--accent);background:var(--accent-soft)">${ic('check')}Vas</span>` : ic('chevron-right')}</button>
+  </div>${tabbar('home')}`;
+}
+function vExplore() {
+  const list = SPACES.filter(s => [...S.filters].every(f => s.tags.includes(f)));
+  return `${big('Explorar')}
+  <div class="scroll">
+    <div style="position:relative;margin:4px 0 12px"><input class="input" id="search" placeholder="Buscar intereses" style="padding-left:40px"><span style="position:absolute;left:12px;top:11px;color:var(--muted)">${ic('search')}</span></div>
+    <div class="chips">${FILTERS.map(f => `<button class="chip" data-act="filter:${f}" aria-pressed="${S.filters.has(f)}">${f}</button>`).join('')}</div>
+    <div class="label">Eventos</div>
+    <button class="card person" style="border:0;width:100%;text-align:left" data-act="nav:event"><span class="datebox"><span>JUE</span><b>29</b></span><span class="t"><b>Club de ajedrez</b><small>Con guía de «qué esperar»</small></span>${ic('chevron-right')}</button>
+    <div class="label">Espacios</div>
+    <div class="group">${list.map(s => `<div class="cell"><span class="tile ${s.c}">${ic(s.ic)}</span><span class="t"><b>${s.t}</b><small>${s.tags.join(' · ')}</small></span>
+      ${s.mine ? `<button class="btn sm tonal" data-act="open:${s.id}">Abrir</button>` : S.joined.has(s.t) ? `<span class="chev">${ic('check')}</span>` : `<button class="btn sm" data-act="join:${s.t}">Unirme</button>`}</div>`).join('') || `<div class="cell"><span class="t muted">Sin resultados. Quita un filtro.</span></div>`}</div>
+    <p class="note" style="margin-top:12px">${ic('eye')} Puedes unirte y solo leer al inicio.</p>
+  </div>${tabbar('explore')}`;
+}
+function vEvent() {
+  return `${topBar('', '')}<div class="scroll">
+    <div class="ev-hero"><span class="datebox" style="width:64px"><span>JUE</span><b style="font-size:26px">29</b></span>
+      <div><h2 class="h2" style="margin:0">Club de ajedrez</h2><div class="muted small">5:00–6:30 p. m. · Pabellón B, sala 204</div></div></div>
+    <div class="facts">
+      <div class="fact"><span class="tile bl">${ic('users')}</span><div><b>6–10</b><small>personas</small></div></div>
+      <div class="fact"><span class="tile te">${ic('volume-1')}</span><div><b>Ruido bajo</b><small>sala cerrada</small></div></div>
+      <div class="fact"><span class="tile or">${ic('sun')}</span><div><b>Luz natural</b><small>sin fluorescentes</small></div></div>
+      <div class="fact"><span class="tile pu">${ic('message-circle-off')}</span><div><b>Poco diálogo</b><small>se juega en silencio</small></div></div>
+    </div>
+    <div class="label">Paso a paso</div>
+    <ol class="tl">
+      <li><span class="h">5:00</span><span class="dot"></span><span>Lucía, mentora, te recibe en la puerta</span></li>
+      <li><span class="h">5:10</span><span class="dot"></span><span>Parejas por nivel, o solo mirar</span></li>
+      <li><span class="h">5:50</span><span class="dot"></span><span>Pausa · rincón tranquilo</span></li>
+      <li><span class="h">6:30</span><span class="dot"></span><span>Fin · puedes irte cuando quieras</span></li>
+    </ol>
+    <div class="card person" style="margin-top:12px">${avatar('D', 'high')}<span class="t"><b>Diego también irá</b><small>Pueden encontrarse en la entrada</small></span></div>
+  </div>
+  <div class="footer"><button class="btn ${S.going ? 'tonal' : ''}" data-act="going">${S.going ? ic('check') + ' Lucía sabe que irás' : 'Me interesa ir'}</button>
+    <p class="note" style="justify-content:center">${ic('lock')} Solo la mentora sabe que asistirás.</p></div>`;
+}
+function lastMsg(id) {
+  const c = CHATS[id]; const all = [...c.msgs, ...S.sent[id].map(m => ({ me: m })), ...(S.replied[id] ? c.reply : [])].filter(m => m.them || m.me);
+  const m = all[all.length - 1]; return m ? (m.me ? 'Tú: ' + m.me : (m.who ? m.who + ': ' : '') + m.them) : 'Saluda cuando quieras';
+}
+function vChats() {
+  return `${big('Chats')}
+  <div class="scroll">
+    <p class="note" style="margin:0 0 12px">${ic('bell-off')} Sin «en línea», sin «visto», sin prisa.</p>
+    <div class="group">${Object.entries(CHATS).map(([id, c]) => `<button class="cell" data-act="open:${id}">${avatar(c.av, c.energy)}<span class="t"><b>${c.short || c.name}</b><small>${esc(lastMsg(id))}</small></span></button>`).join('')}</div>
+    <div class="label">Energía</div>
+    <div class="chips">${Object.values(ENERGY).map(([, l, c]) => `<span class="chip" style="cursor:default"><span class="edot ${c}"></span>${l}</span>`).join('')}</div>
+  </div>${tabbar('chats')}`;
+}
+function vPhrases() {
+  return `${big('Frases')}
+  <div class="scroll">
+    <p class="note" style="margin:0 0 12px">${ic('copy')} Toca una frase para copiarla.</p>
+    <div class="chips" style="margin-bottom:14px">${Object.keys(PHRASES).map(c => `<button class="chip" data-act="pcat:${c}" aria-pressed="${S.pcat === c}">${c}</button>`).join('')}</div>
+    <div class="group">${PHRASES[S.pcat].map(p => `<button class="cell" data-act="copy:${esc(p)}"><span class="t" style="white-space:normal">${esc(p)}</span><span class="chev">${ic('copy')}</span></button>`).join('')}</div>
+    <div class="label">Mis frases</div>
+    ${S.myPhrases.length ? `<div class="group" style="margin-bottom:10px">${S.myPhrases.map(p => `<button class="cell" data-act="copy:${esc(p)}"><span class="t">${esc(p)}</span><span class="chev">${ic('copy')}</span></button>`).join('')}</div>` : ''}
+    <div style="display:flex;gap:8px"><input class="input" id="newphrase" placeholder="Escribe tu propia frase"><button class="send" data-act="addphrase" aria-label="Guardar frase">${ic('plus')}</button></div>
+  </div>${tabbar('phrases')}`;
+}
+function vHelp() {
+  return `${topBar('Ayuda', '', { help: false })}<div class="scroll">
+    <div class="card" style="background:var(--danger-soft);box-shadow:none;display:flex;gap:12px;align-items:center;margin-top:6px">
+      <span class="tile rd lg">${ic('phone')}</span><div><b style="font-size:1.1em;user-select:all">113, opción 5</b><div class="small muted">Salud mental · gratis · 24 h</div></div></div>
+    <div class="label">Personas</div>
+    <div class="group">${cell('human', 'user-round', 'gr', 'Hablar con una persona', S.helped ? 'Te escribirán en horario de atención' : 'Mentor o Bienestar Estudiantil', S.helped ? ic('check') : ic('chevron-right'))}
+      ${S.trust ? cell('toast:Le avisamos a Mamá que quieres que te escriba.', 'heart', 'pk', 'Avisar a mi persona de confianza', 'Solo recibe un aviso') : ''}</div>
+    <div class="label">Seguridad</div>
+    <div class="group">${cell('energy:low', 'pause', 'pu', 'Tomar una pausa', 'Silencia avisos')}${cell('toast:Reporte enviado. Lo revisa una persona en menos de 24 h.', 'flag', 'or', 'Reportar o bloquear', 'Revisión humana < 24 h')}
+      ${cell('alert', 'triangle-alert', 'gy', 'Ver ejemplo de alerta', '', S.showAlert ? ic('chevron-up') : ic('chevron-down'))}</div>
+    ${S.showAlert ? `<div class="card" style="margin-top:10px;background:var(--warn-soft);box-shadow:none;display:grid;gap:8px">
+      <div class="msg them" style="max-width:100%">Pásame tu número y seguimos por WhatsApp. Te presto plata.</div>
+      <div class="small"><b>Pedir dinero o cambiar de app es señal de riesgo.</b> La IA se pausa en ese chat y una persona revisa el caso.</div></div>` : ''}
+  </div>`;
+}
+function vProfile() {
+  const style = [S.direct && 'Mensajes directos', S.calm && 'Respondo con calma'].filter(Boolean);
+  return `${big('Perfil')}<div class="scroll">
+    <div class="card person">${avatar('A', S.energy)}<span class="t"><b>Ale</b><small>${[...S.interests].slice(0, 3).join(' · ')}</small></span></div>
+    <div class="label">Tu tarjeta de estilo</div>
+    <div class="chips">${style.map(s => `<span class="chip" style="cursor:default">${s}</span>`).join('') || '<span class="muted small">Sin preferencias</span>'}</div>
+    <div class="label">¿Cómo te sentiste esta semana?</div>
+    <div class="card"><div class="mood">${[1, 2, 3, 4, 5].map(n => `<button data-act="mood:${n}" aria-pressed="${S.mood === n}">${n}</button>`).join('')}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px"><span>Incómodo</span><span>Cómodo</span></div>
+      ${S.mood ? `<p class="small" style="margin:10px 0 0">Hace un mes: 2 · Esta semana: 2 chats nuevos y 1 encuentro.</p>` : ''}</div>
+    <p class="note" style="margin-top:8px">${ic('lock')} Solo tú lo ves. Tu institución ve promedios anónimos.</p>
+    <div class="label">Ajustes</div>
+    <div class="group">${swCell('aiOn', 'sparkles', 'pu', 'Sugerencias de IA')}
+      ${cell('nav:support', 'lightbulb', 'te', 'Nivel de ayuda', SUPPORT.find(s => s[0] === S.support)[1])}
+      ${swCell('fade', 'trending-down', 'gr', 'Menos ayuda con el tiempo')}
+      ${swCell('followups', 'refresh-cw', 'bl', 'Sugerir chats para retomar')}
+      ${swCell('bigtext', 'type', 'bl', 'Texto grande')}${swCell('lowstim', 'sun', 'or', 'Baja estimulación')}</div>
+    <div class="label">Privacidad</div>
+    <div class="group">${cell('toast:Tus mensajes se borran solos a los 90 días.', 'timer', 'gy', 'Borrado automático', '90 días')}
+      ${cell('toast:Te pediremos confirmar. Se borra todo en máximo 30 días.', 'trash-2', 'rd', 'Eliminar mi cuenta', '', '', 'danger')}</div>
+    <button class="btn text" data-act="reset" style="margin-top:8px">Reiniciar demo</button>
+  </div>${tabbar('profile')}`;
+}
+function vSupportEdit() {
+  return `${topBar('Nivel de ayuda', '', { help: false })}<div class="scroll">
+    <div class="group" style="margin-top:8px">${SUPPORT.map(([k, t, d, i]) => `<button class="cell" data-act="support:${k}"><span class="tile ${k === 'min' ? 'gy' : k === 'mid' ? 'te' : 'gr'}">${ic(i)}</span><span class="t"><b>${t}</b><small>${d}</small></span><span class="radio ${S.support === k ? 'on' : ''}">${S.support === k ? ic('check') : ''}</span></button>`).join('')}</div>
+  </div>`;
+}
+
+/* ---------- chat ---------- */
+function bubbles(id) {
+  const c = CHATS[id], out = [];
+  if (c.fresh) out.push(`<div class="intro">${avatar(c.av, c.energy)}<b>${c.name}</b><span class="small muted">Nueva en ${c.space}</span><div class="chips">${c.shared.map(s => `<span class="chip">${s}</span>`).join('')}</div></div>`);
+  if (c.style) out.push(S.showStyle ? `<button class="stylebox" style="border:0;text-align:left" data-act="style"><b class="small">Estilo de ${c.name}</b><ul>${c.style.map(x => `<li>${x}</li>`).join('')}</ul></button>`
+    : `<button class="stylechip" data-act="style">${ic('id-card')}Estilo de ${c.name}</button>`);
+  const one = (m) => {
+    if (m.day) return `<span class="day">${m.day}</span>`;
+    if (m.sys) return `<span class="sys">${ic('clock')}${m.sys}</span>`;
+    if (m.me) return `<div class="msg me">${esc(m.me)}</div>`;
+    let h = `<div class="msg them">${m.who ? `<span class="who">${m.who}</span>` : ''}${esc(m.them)}</div>`;
+    if (m.amb && S.aiOn && S.support !== 'min' && !S.sent[id].length) h += `<button class="askmean" data-act="sheet:${m.amb}">${ic('sparkles')}${c.group ? '¿Qué se decidió?' : '¿Qué quiso decir?'}</button>`;
+    return h;
+  };
+  c.msgs.forEach(m => { if (!(m.sys && S.sent[id].length)) out.push(one(m)); });
+  S.sent[id].forEach(m => out.push(one({ me: m })));
+  if (S.replied[id]) {
+    c.reply.forEach(m => out.push(one(m)));
+    if (c.nextStep) out.push(`<div class="banner"><span class="ai-badge">${ic('sparkles')}Sugerencia</span><b>¿Conocerse en persona?</b><span class="small muted">Diego te invitó al club del jueves.</span><button class="btn sm tonal" style="justify-self:start" data-act="nav:next">Ver opciones</button></div>`);
+  }
+  return out.join('');
+}
+function vChat() {
+  const id = S.chat, c = CHATS[id], draft = S.draft[id] || '';
+  const sub = c.energy ? `<span class="edot ${ENERGY[c.energy][2]}"></span>${ENERGY[c.energy][1]}` : c.space;
+  const quick = S.aiOn && !S.replied[id]
+    ? `<div class="quick">${c.quick.map(([i, l, t]) => `<button class="ai" data-act="sheet:${t}">${ic(i)}${l}</button>`).join('')}<button data-act="tab:phrases">${ic('bookmark')}Frases</button></div>`
+    : !S.aiOn ? `<div class="quick"><button data-act="tog:aiOn">${ic('sparkles')}Activar sugerencias</button></div>` : '';
+  return `${topBar(c.short || c.name, sub)}
+  <div class="scroll" style="padding:0" id="chatScroll"><div class="chat">${bubbles(id)}</div></div>
+  ${quick}
+  ${draft ? `<div class="hint">${ic('pen-line')}Cámbialo a tu manera antes de enviar</div>` : ''}
+  <div class="composer"><div class="field-wrap ${draft ? 'filled' : ''}"><textarea id="draft" aria-label="Mensaje" placeholder="Mensaje">${esc(draft)}</textarea>
+    ${S.aiOn ? `<button class="tone" data-act="tone" aria-label="¿Cómo suena mi mensaje?" title="¿Cómo suena?">${ic('wand-sparkles')}</button>` : ''}</div>
+    <button class="send" data-act="send" aria-label="Enviar">${ic('arrow-up')}</button></div>
+  ${S.sheet ? vSheet() : ''}`;
+}
+function toneCheck(text, c) {
+  const n = [];
+  if (/[A-ZÁÉÍÓÚÑ]{5,}/.test(text) || /!!/.test(text)) n.push(['triangle-alert', 'Mayúsculas o «!!» pueden leerse como enojo']);
+  n.push(text.includes('?') ? ['message-circle', 'Invita a responder: termina con pregunta'] : ['message-square', 'Es una afirmación. Una pregunta invita a responder (opcional)']);
+  n.push(text.length < 30 ? ['zap', `Breve y directo${c.style && c.style[0].includes('directos') ? ` · a ${c.name} le gusta así` : ''}`] : ['check', 'Se entiende con claridad']);
+  return n;
+}
+function vSheet() {
+  const c = CHATS[S.chat];
+  const shell = (title, body) => `<div class="dim" data-act="close"><div class="sheet" role="dialog" aria-label="${title}"><div class="grab"></div>
+    <div class="sheet-h"><span class="tile pu">${ic('sparkles')}</span><b>${title}</b><button class="ibtn" data-act="close" aria-label="Cerrar">${ic('x')}</button></div>${body}
+    <p class="note" style="margin-top:12px">${ic('lock')} La IA solo leyó los últimos mensajes. No se guardan.</p></div></div>`;
+  if (S.sheet === 'tone') {
+    const t = S.draft[S.chat] || '';
+    return shell('¿Cómo suena?', `<div class="stack">
+      <div class="msg me" style="align-self:flex-end;max-width:90%;justify-self:end">${esc(t)}</div>
+      <div class="group">${toneCheck(t, c).map(([i, l]) => `<div class="cell"><span class="tile te">${ic(i)}</span><span class="t" style="white-space:normal">${l}</span></div>`).join('')}</div>
+      <div class="direct"><b>Tu forma de escribir es válida.</b><span class="small">Esto solo anticipa cómo puede leerse.</span></div>
+      <button class="btn" data-act="close">Volver al mensaje</button></div>`);
+  }
+  const tabs = Object.keys(c.tabs), cur = c.tabs[S.tab];
+  const seg = tabs.length > 1 ? `<div class="seg" role="tablist" style="margin-bottom:14px">${tabs.map(t => `<button role="tab" aria-selected="${t === S.tab}" data-act="sheet:${t}">${t}</button>`).join('')}</div>` : '';
+  const card = (s, k, usable = true) => `<div class="sug"><span class="k">${s.k}</span><span class="idea">${s.idea}</span>
+    ${S.why[S.tab + k] && s.why ? `<span class="why">${s.why}</span>` : ''}
+    <div class="foot"><span class="grow">${dots(s.c)}${s.why ? `<button class="linkish" data-act="why:${k}">${ic('info')}${S.why[S.tab + k] ? 'Ocultar' : '¿Por qué?'}</button>` : ''}</span>
+    ${usable ? `<button class="btn sm tonal" style="background:var(--ai-soft);color:var(--ai)" data-act="use:${k}">Usar</button>` : ''}</div></div>`;
+  let body = '';
+  if (cur.sugs) body = `<div class="stack">${cur.sugs.map((s, k) => card(s, k)).join('')}</div>`;
+  if (cur.reads) body = `<p class="small muted" style="margin:0 0 10px">«${esc(cur.about)}»</p><div class="stack">${cur.reads.map((r, k) => card(r, k, false)).join('')}
+    <div class="direct"><span class="small"><b>¿No estás seguro?</b> Preguntar es válido:</span><span>«${esc(cur.direct)}»</span><button class="btn sm" style="justify-self:start" data-act="usedirect">Usar</button></div></div>`;
+  if (cur.timing) body = `<div class="group">${cur.timing.map(([i, t, d]) => `<div class="cell"><span class="tile te">${ic(i)}</span><span class="t"><b>${t}</b><small style="white-space:normal">${d}</small></span></div>`).join('')}</div>`;
+  if (cur.summary) body = `<div class="group">${cur.summary.map(([i, w, t]) => `<div class="cell"><span class="tile ${w === 'Nadie aún' ? 'or' : 'gy'}">${ic(i)}</span><span class="t"><b>${t}</b><small>${w}</small></span></div>`).join('')}</div>
+    <div class="direct" style="margin-top:10px"><span class="small">${cur.hint}</span><button class="btn sm" style="justify-self:start" data-act="sheet:Participar">Ver cómo decirlo</button></div>`;
+  const guide = S.support === 'max' ? `<p class="note" style="margin:-4px 0 12px">${ic('list-checks')} 1. Elige una idea · 2. Edítala · 3. Envía</p>` : '';
+  return shell(cur.title, seg + guide + body + `<button class="btn text" data-act="close" style="margin-top:6px">Escribir a mi manera</button>
+    <button class="linkish" style="width:100%;justify-content:center" data-act="toast:Gracias. Lo usaremos para mejorar, sin guardar tu chat.">${ic('thumbs-down')}No me sirvió</button>`);
+}
+function vNext() {
+  const ch = S.step !== null ? STEPS[S.step] : null;
+  return `${topBar('Siguiente paso', 'Con Diego')}<div class="scroll">
+    <h2 class="h2" style="margin-top:8px">¿Cómo quieres seguir?</h2>
+    <p class="lead small">Tú decides. Nada es obligatorio.</p>
+    <div class="group">${STEPS.map(([i, t, d], k) => `<button class="cell" data-act="step:${k}"><span class="tile ${['bl', 'te', 'gy'][k]}">${ic(i)}</span><span class="t"><b>${t}</b><small>${d}</small></span><span class="radio ${S.step === k ? 'on' : ''}">${S.step === k ? ic('check') : ''}</span></button>`).join('')}</div>
+    ${ch ? (ch[3] ? `<div class="label">Mensaje sugerido · edítalo</div><textarea class="input" id="stepmsg" style="height:84px;resize:none">${esc(ch[3])}</textarea>
+      ${S.step === 0 ? `<button class="btn text" data-act="nav:event">${ic('info')}Qué esperar del club</button>` : ''}`
+      : `<div class="card" style="margin-top:12px">Perfecto. No volveremos a sugerirlo.</div>`) : ''}
+    <p class="note" style="margin-top:14px">${ic('trending-down')} Esta semana escribiste 3 mensajes sin ayuda.</p>
+  </div>
+  ${ch && ch[3] ? `<div class="footer"><button class="btn" data-act="sendstep">Enviar a Diego</button></div>` : ''}`;
+}
+
+const VIEWS = { welcome: vWelcome, obai: vObAI, obabout: vObAbout, obsupport: vObSupport, obinterests: vObInterests,
+  home: vHome, explore: vExplore, event: vEvent, chats: vChats, phrases: vPhrases, help: vHelp, profile: vProfile, support: vSupportEdit, chat: vChat, next: vNext };
+
+/* ---------- render y acciones ---------- */
+function render() {
+  $('#app').innerHTML = VIEWS[S.route]() + (S.toast ? `<div class="toast" role="status">${ic(S.toast[1])}<span>${esc(S.toast[0])}</span></div>` : '');
+  const sc = $('#screen'); sc.classList.toggle('lowstim', S.lowstim); sc.classList.toggle('bigtext', S.bigtext);
+  if (window.lucide) lucide.createIcons();
+  const cs = $('#chatScroll'); if (cs) cs.scrollTop = cs.scrollHeight;
+}
+let toastT;
+function toast(m, icon = 'check') { S.toast = [m, icon]; render(); clearTimeout(toastT); toastT = setTimeout(() => { S.toast = null; render(); }, 3000); }
+function nav(r) { S.stack.push(S.route); S.route = r; S.sheet = null; render(); }
+function back() { S.sheet = null; S.route = S.stack.pop() || 'home'; render(); }
+
+function act(a) {
+  const i = a.indexOf(':'); const k = i < 0 ? a : a.slice(0, i), v = i < 0 ? '' : a.slice(i + 1);
+  const c = S.chat && CHATS[S.chat];
+  switch (k) {
+    case 'ob': return nav('ob' + v);
+    case 'nav': return nav(v);
+    case 'back': return back();
+    case 'tab': S.stack = []; S.route = v; S.sheet = null; return render();
+    case 'start': S.stack = []; S.route = 'home'; return render();
+    case 'tog': S[v] = !S[v]; return render();
+    case 'occ': S.occ = v; return render();
+    case 'support': S.support = v; if (v === 'max') S.bigtext = true; return render();
+    case 'trust': S.trust = !S.trust; return render();
+    case 'hard': S.hard.has(v) ? S.hard.delete(v) : S.hard.add(v); return render();
+    case 'int': S.interests.has(v) ? S.interests.delete(v) : S.interests.add(v); return render();
+    case 'energy': S.energy = v; if (S.route === 'help') return toast('Pausa activada. Verán que necesitas tiempo.', 'pause'); return render();
+    case 'filter': S.filters.has(v) ? S.filters.delete(v) : S.filters.add(v); return render();
+    case 'join': S.joined.add(v); return toast('Te uniste. Puedes solo leer.', 'eye');
+    case 'going': S.going = !S.going; return S.going ? toast('Le avisamos a Lucía.', 'check') : render();
+    case 'open': S.chat = v; S.showStyle = false; return nav('chat');
+    case 'style': S.showStyle = !S.showStyle; return render();
+    case 'sheet': if (!S.aiOn) return; S.sheet = 'ai'; S.tab = v; return render();
+    case 'why': S.why[S.tab + v] = !S.why[S.tab + v]; return render();
+    case 'tone': { const t = ($('#draft')?.value || '').trim(); if (!t) return toast('Escribe algo y te digo cómo puede sonar.', 'wand-sparkles'); S.draft[S.chat] = t; S.sheet = 'tone'; return render(); }
+    case 'close': S.sheet = null; return render();
+    case 'use': S.draft[S.chat] = c.tabs[S.tab].sugs[+v].idea; S.sheet = null; return render();
+    case 'usedirect': S.draft[S.chat] = c.tabs[S.tab].direct; S.sheet = null; return render();
+    case 'send': {
+      const t = ($('#draft')?.value || '').trim();
+      if (!t) return toast('Escribe algo primero. Sin apuro.', 'clock');
+      const id = S.chat; S.sent[id].push(t); S.draft[id] = ''; render();
+      setTimeout(() => { S.replied[id] = true; if (S.route === 'chat' && S.chat === id) render(); }, 1100);
+      return;
+    }
+    case 'step': S.step = +v; return render();
+    case 'sendstep': { const t = ($('#stepmsg')?.value || '').trim(); if (t) S.sent.diego.push(t); if (S.step === 0) S.going = true; S.route = S.stack.pop() || 'chat'; S.chat = 'diego'; return toast('Enviado con tus palabras.', 'send'); }
+    case 'pcat': S.pcat = v; return render();
+    case 'copy': {
+      const ok = () => toast('Frase copiada', 'copy'), ko = () => toast('Mantén presionada la frase para copiarla', 'copy');
+      try { navigator.clipboard.writeText(v).then(ok, ko); } catch (e) { ko(); }
+      return;
+    }
+    case 'addphrase': { const t = ($('#newphrase')?.value || '').trim(); if (!t) return toast('Escribe la frase primero', 'pen-line'); S.myPhrases.push(t); return toast('Frase guardada', 'bookmark'); }
+    case 'human': S.helped = true; return toast('Una mentora te escribirá (lun–vie, 9–18 h).', 'user-round');
+    case 'alert': S.showAlert = !S.showAlert; return render();
+    case 'mood': S.mood = +v; return render();
+    case 'reset': S = initial(); return render();
+    case 'toast': return toast(v, 'info');
+  }
+}
+
+$('#app').addEventListener('click', (e) => {
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  if (t.classList.contains('dim') && e.target !== t) return;
+  act(t.dataset.act);
+});
+$('#app').addEventListener('input', (e) => { if (e.target.id === 'draft') S.draft[S.chat] = e.target.value; });
+render();
+</script>
+
+</html>
